@@ -134,7 +134,7 @@ func BenchmarkKeyGen(b *testing.B) {
 	}
 }
 
-func BenchmarkBlindSchnorr(b *testing.B) {
+func BenchmarkSnowblind(b *testing.B) {
 	src := rand.NewChaCha8([32]byte{})
 	sk, _ := GenerateKey(src)
 	pk := sk.Public().(*PublicKey)
@@ -198,4 +198,20 @@ func BenchmarkBlindSchnorr(b *testing.B) {
 			us.finished = false
 		}
 	})
+
+	b.Run("Verify", func(b *testing.B) {
+		ss := sk.NewSignerState()
+		cmt, _ := ss.NewCommitment()
+		us := pk.NewUserState()
+		msg := []byte("Hello, Alice!")
+		chal, _ := us.NewChallenge(cmt, msg)
+		rsp, _ := ss.NewResponse(chal)
+		sig, _ := us.NewSignature(rsp)
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			Verify(pk, sig, msg)
+		}
+	})
+
 }
