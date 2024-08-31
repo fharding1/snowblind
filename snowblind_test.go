@@ -69,17 +69,28 @@ func TestCorrectness(t *testing.T) {
 	}
 }
 
-func FuzzCorrectness(f *testing.F) {
-	f.Fuzz(func(t *testing.T, message []byte) {
-		valid, err := Correctness(message)
-		if err != nil {
-			t.Fatal(err)
-		}
+func TestIncorrectness(t *testing.T) {
+	src := rand.NewChaCha8([32]byte{})
+	sk, _ := GenerateKey(src)
+	pk := sk.Public().(*PublicKey)
+	ss := sk.NewSignerState()
+	cmt, _ := ss.NewCommitment()
+	us := pk.NewUserState()
+	chal, _ := us.NewChallenge(cmt, []byte("Hello"))
+	rsp, _ := ss.NewResponse(chal)
+	sig, _ := us.NewSignature(rsp)
 
-		if !valid {
-			t.Fatal(valid)
-		}
-	})
+	if valid := Verify(pk, sig, []byte("hello")); valid {
+		t.Error("signatures should be case sensitive")
+	}
+
+	if valid := Verify(pk, sig, []byte("")); valid {
+		t.Error("an empty string should not be valid")
+	}
+
+	if valid := Verify(pk, sig, []byte("Hello ")); valid {
+		t.Error("padding should not be valid")
+	}
 }
 
 func TestKeyEquality(t *testing.T) {

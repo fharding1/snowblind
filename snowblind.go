@@ -442,10 +442,7 @@ func sigHash(pk *r255.Element, m []byte, bigRBar *r255.Element) (*r255.Scalar, e
 		return nil, err
 	}
 
-	digest := make([]byte, sha512.Size)
-	h.Sum(digest)
-
-	result := r255.NewScalar().FromUniformBytes(digest)
+	result := r255.NewScalar().FromUniformBytes(h.Sum(nil))
 
 	return result, nil
 }
